@@ -1,0 +1,5 @@
+# pip install -r requirements.txt
+ultralytics==8.3.85
+opencv-python==4.11.0.86
+pyttsx3==2.98
+numpy==2.1.1
