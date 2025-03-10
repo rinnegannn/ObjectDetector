@@ -2,7 +2,7 @@ import cv2
 from tkinter import Tk, filedialog
 import pyttsx3
 from ultralytics import YOLO  # Import YOLOv8 from Ultralytics
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
