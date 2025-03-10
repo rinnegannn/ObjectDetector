@@ -2,6 +2,9 @@ import cv2
 from tkinter import Tk, filedialog
 import pyttsx3
 from ultralytics import YOLO  # Import YOLOv8 from Ultralytics
+from flask import Flask, request, jsonify, render_template
+
+app = Flask(__name__)
 
 def upload_image():
     # Open file dialog to upload an image
