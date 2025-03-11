@@ -13,13 +13,14 @@
     
     <div id="photo-container">
       <label for="photo-input" id="photo-btn">
-      TAKE PHOTO
+        TAKE PHOTO
+        <input id="photo-input" name="image_path" type="file" accept="image/*" capture="environment">
       </label>
-      <form action="{{ url_for('upload') }}" method="post">
-      <input id="photo-input" name = "image" type="file" accept="image/*" capture="environment">
-      </form>
     </div>
-
+    <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+      <input name="file_path" type="file" accept="image/*" capture="environment">
+      <button type="submit">Upload</button>
+    </form>
     
     <div id="preview-container">
       <img id="preview" src="test.png" alt="Preview will appear here">

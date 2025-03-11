@@ -12,9 +12,12 @@ def welcome():
     return render_template("index.html")
 
 
-@app.route ("/upload", methods=["POST"])
+@app.route("/upload", methods=["POST"])
 def upload():
-    path = request.form["image"]
+    print("Uploading image...")
+    path = request.form["file_path"]
+    detect_objects(path)
+    return "Image uploaded and objects detected."
 
 def detect_objects(image_path):
     # Initialize text-to-speech engine
@@ -118,12 +121,3 @@ def detect_objects(image_path):
 # Runs the program
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-# if __name__ == "__main__":
-#     # Upload an image
-#     image_path = upload_image()
-#     if image_path:
-#         detect_objects(image_path)
-#     else:
-#         print("No image selected!")
