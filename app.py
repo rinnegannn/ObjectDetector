@@ -6,6 +6,9 @@ from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
+@app.route("/")
+def welcome():
+    return render_template("index.html")
 def upload_image():
     # Open file dialog to upload an image
     root = Tk()
@@ -112,10 +115,15 @@ def detect_objects(image_path):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+# Runs the program
 if __name__ == "__main__":
-    # Upload an image
-    image_path = upload_image()
-    if image_path:
-        detect_objects(image_path)
-    else:
-        print("No image selected!")
+    app.run(debug=True)
+
+
+# if __name__ == "__main__":
+#     # Upload an image
+#     image_path = upload_image()
+#     if image_path:
+#         detect_objects(image_path)
+#     else:
+#         print("No image selected!")
