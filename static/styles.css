@@ -41,7 +41,7 @@ body {
   font-weight: 700;
 }
 
-#photo-container {
+#upload-form {
   margin-bottom: 30px;
 }
 
@@ -53,7 +53,7 @@ body {
   font-weight: 700;
 }
 
-#photo-btn {
+#photo-input {
   display: inline-block;
   padding: 20px 36px;
   background: linear-gradient(45deg, #ff6d00, #ff9100);
@@ -66,18 +66,18 @@ body {
   box-shadow: 0 8px 20px rgba(255, 109, 0, 0.4);
 }
 
-#photo-btn:hover {
+#photo-input:hover {
   background: linear-gradient(45deg, #ff5722, #ff8a65);
   transform: translateY(-3px);
   box-shadow: 0 12px 25px rgba(255, 109, 0, 0.5);
 }
 
-#photo-btn:active {
+#photo-input:active {
   transform: scale(0.98) translateY(0);
   box-shadow: 0 5px 15px rgba(255, 109, 0, 0.4);
 }
 
-#photo-input {
+#photo-inputer {
   display: none;
 }
 
