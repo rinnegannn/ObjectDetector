@@ -16,18 +16,17 @@ def welcome():
 def upload():
     print("Uploading image...")
     path = request.form["file_path"]
-    detect_objects(path)
+    # Load the image
+    img = cv2.imread(path)
+    detect_objects(img)
     return "Image uploaded and objects detected."
 
-def detect_objects(image_path):
+def detect_objects(img):
     # Initialize text-to-speech engine
     engine = pyttsx3.init()
 
     # Load the YOLOv8 model (using the largest and most accurate YOLOv8 model, 'yolov8x.pt')
     model = YOLO("yolov8x.pt")  
-
-    # Load the image
-    img = cv2.imread(image_path)
 
     # Perform inference on the image
     results = model(img)
