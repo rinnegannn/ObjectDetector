@@ -6,15 +6,15 @@ from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
+# Welcome page for the program
 @app.route("/")
 def welcome():
     return render_template("index.html")
-def upload_image():
-    # Open file dialog to upload an image
-    root = Tk()
-    root.withdraw()  # Hide the Tkinter root window
-    file_path = filedialog.askopenfilename(title="Select Image", filetypes=[("Image files", "*.jpg;*.png;*.jpeg")])
-    return file_path
+
+
+@app.route ("/upload", methods=["POST"])
+def upload():
+    path = request.form["image"]
 
 def detect_objects(image_path):
     # Initialize text-to-speech engine
