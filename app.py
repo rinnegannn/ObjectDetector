@@ -1,83 +1,121 @@
 import cv2
-from tkinter import Tk, filedialog
 import pyttsx3
-from ultralytics import YOLO  # Import YOLOv8 from Ultralytics
-from flask import Flask, request, render_template
+import os
+import numpy as np
+from ultralytics import YOLO
+from flask import Flask, request, render_template, jsonify
+import base64
 
 app = Flask(__name__)
+
+# Create upload directory when app starts
+os.makedirs('static/uploads', exist_ok=True)
 
 # Welcome page for the program
 @app.route("/")
 def welcome():
     return render_template("index.html")
 
-
 @app.route("/upload", methods=["POST"])
 def upload():
     print("Uploading image...")
-    path = request.form["file_path"]
-    # Load the image
-    img = cv2.imread(path)
-    detect_objects(img)
-    return "Image uploaded and objects detected."
+   
+    # Check if file is in the request
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+   
+    file = request.files['file']
+   
+    # Check if file name is empty
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+   
+    # Read the file into a numpy array
+    filestr = file.read()
+    npimg = np.frombuffer(filestr, np.uint8)
+    img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+   
+    # Process the image and get the result
+    processed_img, detected_objects = detect_objects(img)
+   
+    # Encode the processed image to base64 for sending back to client
+    _, buffer = cv2.imencode('.jpg', processed_img)
+    encoded_img = base64.b64encode(buffer).decode('utf-8')
+   
+    # Return the processed image and detected objects
+    return jsonify({
+        "image": encoded_img,
+        "objects": detected_objects
+    })
 
-def detect_objects(img):
+@app.route("/read-aloud", methods=["POST"])
+def read_aloud():
+    data = request.json
+    objects = data.get('objects', [])
+   
+    if not objects:
+        return jsonify({"message": "No objects to read"}), 200
+   
     # Initialize text-to-speech engine
     engine = pyttsx3.init()
+   
+    # Read objects aloud
+    for obj in objects:
+        engine.say(f"I see a {obj}")
+   
+    # Run the text-to-speech engine
+    engine.runAndWait()
+   
+    return jsonify({"message": "Objects read aloud"}), 200
 
-    # Load the YOLOv8 model (using the largest and most accurate YOLOv8 model, 'yolov8x.pt')
+def detect_objects(img):
+    # Load the YOLOv8 model
     model = YOLO("yolov8x.pt")  
 
     # Perform inference on the image
     results = model(img)
 
     # Extract detection results
-    detections = results[0].boxes.data.cpu().numpy()  # Get detection results as a numpy array
-    names = results[0].names  # Get class names
+    detections = results[0].boxes.data.cpu().numpy()
+    names = results[0].names
 
-    # Print all detections for debugging
-    print("All Detections:")
-    print(detections)
+    # Filter results based on confidence score
+    filtered_detections = [det for det in detections if det[4] > 0.3]
 
-    # Filter results based on confidence score (> 0.1)
-    filtered_detections = [det for det in detections if det[4] > 0.3]  # det[4] is the confidence score
-
-    # If no detections, print a message and return
-    if not filtered_detections:
-        engine.say(f"No objects detected in the image")
-        engine.runAndWait()
-        return
+    # List to store detected object names
+    detected_objects = []
 
     # Calculate scaling factors based on image size
     height, width = img.shape[:2]
-    scale_factor = max(height, width) / 1000  # Adjust 1000 to control the scaling sensitivity
+    scale_factor = max(height, width) / 1000
 
     # Define parameters for the label display
     font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 1.5 * scale_factor  # Scale font size based on image size
-    font_thickness = int(3 * scale_factor)  # Scale font thickness based on image size
-    text_color = (255, 255, 255)  # White text
-    background_color = (0, 0, 0)  # Black background
-    padding = int(20 * scale_factor)  # Padding around text
-    line_spacing = int(10 * scale_factor)  # Space between lines
+    font_scale = 1.5 * scale_factor
+    font_thickness = int(3 * scale_factor)
+    text_color = (255, 255, 255)
+    background_color = (0, 0, 0)
+    padding = int(20 * scale_factor)
+    line_spacing = int(10 * scale_factor)
 
     # Calculate the starting position for the labels at the bottom
-    label_height = int(font_scale * 50)  # Approximate height of one line of text
-    start_y = img.shape[0] - padding - label_height  # Start from the bottom
+    label_height = int(font_scale * 50)
+    start_y = img.shape[0] - padding - label_height
 
     # Draw bounding boxes on the original image
     for detection in filtered_detections:
         x1, y1, x2, y2, conf, cls_id = detection
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-        label = names[int(cls_id)]  # Get the class name
-        color = (0, 255, 0)  # Green color for bounding boxes
-        box_thickness = int(4 * scale_factor)  # Scale bounding box thickness
+        label = names[int(cls_id)]
+        detected_objects.append(label)
+        color = (0, 255, 0)
+        box_thickness = int(4 * scale_factor)
         cv2.rectangle(img, (x1, y1), (x2, y2), color, box_thickness)
 
     # Draw labels at the bottom of the image
     for detection in filtered_detections:
         x1, y1, x2, y2, conf, cls_id = detection
-        label = names[int(cls_id)]  # Get the class name
+        label = names[int(cls_id)]
 
         # Calculate text size
         (text_width, text_height), _ = cv2.getTextSize(label, font, font_scale, font_thickness)
@@ -91,31 +129,7 @@ def detect_objects(img):
         # Move the starting position up for the next label
         start_y -= (text_height + line_spacing)
 
-    # Resize the image for display to fit on the screen (e.g., 800px width)
-    screen_width = 800
-    aspect_ratio = float(img.shape[1]) / float(img.shape[0])
-    new_width = screen_width
-    new_height = int(screen_width / aspect_ratio)
-    img_resized = cv2.resize(img, (new_width, new_height))
-
-    # Display the output image with labels in BGR (no need for color conversion)
-    cv2.imshow("Detected Objects", img_resized)
-    cv2.waitKey(100)  # Wait for 100ms to ensure the window is open
-
-    # Initialize text-to-speech engine
-    engine = pyttsx3.init()
-
-    # Read the labels aloud (only the name of the item)
-    for detection in filtered_detections:
-        label = names[int(detection[5])]  # Get the class name
-        engine.say(f"I see a {label}")
-
-    # Run the text-to-speech engine
-    engine.runAndWait()
-
-    # Wait for a key press to close the image window
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    return img, detected_objects
 
 # Runs the program
 if __name__ == "__main__":
