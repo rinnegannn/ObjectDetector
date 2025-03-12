@@ -5,7 +5,6 @@ import numpy as np
 from ultralytics import YOLO
 from flask import Flask, request, render_template, jsonify
 import base64
-from datetime import datetime  # Import datetime to generate unique filenames
 
 app = Flask(__name__)
 
@@ -39,11 +38,6 @@ def upload():
     # Process the image and get the result
     processed_img, detected_objects = detect_objects(img)
    
-    # Save the processed image to the uploads folder
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # Generate a unique timestamp
-    filename = f"static/uploads/detected_image_{timestamp}.jpg"  # Create a unique filename
-    cv2.imwrite(filename, processed_img)  # Save the image
-   
     # Encode the processed image to base64 for sending back to client
     _, buffer = cv2.imencode('.jpg', processed_img)
     encoded_img = base64.b64encode(buffer).decode('utf-8')
@@ -51,8 +45,7 @@ def upload():
     # Return the processed image and detected objects
     return jsonify({
         "image": encoded_img,
-        "objects": detected_objects,
-        "saved_path": filename  # Return the path where the image is saved
+        "objects": detected_objects
     })
 
 @app.route("/read-aloud", methods=["POST"])
@@ -126,12 +119,6 @@ def detect_objects(img):
 
         # Calculate text size
         (text_width, text_height), _ = cv2.getTextSize(label, font, font_scale, font_thickness)
-
-        # Draw background rectangle for the label
-        cv2.rectangle(img, (padding, start_y - text_height), (padding + text_width, start_y), background_color, -1)
-
-        # Draw the label text
-        cv2.putText(img, label, (padding, start_y), font, font_scale, text_color, font_thickness)
 
         # Move the starting position up for the next label
         start_y -= (text_height + line_spacing)
