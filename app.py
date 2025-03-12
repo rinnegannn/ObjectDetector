@@ -5,6 +5,7 @@ import numpy as np
 from ultralytics import YOLO
 from flask import Flask, request, render_template, jsonify
 import base64
+from datetime import datetime  # Import datetime to generate unique filenames
 
 app = Flask(__name__)
 
@@ -38,6 +39,11 @@ def upload():
     # Process the image and get the result
     processed_img, detected_objects = detect_objects(img)
    
+    # Save the processed image to the uploads folder
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # Generate a unique timestamp
+    filename = f"static/uploads/detected_image_{timestamp}.jpg"  # Create a unique filename
+    cv2.imwrite(filename, processed_img)  # Save the image
+   
     # Encode the processed image to base64 for sending back to client
     _, buffer = cv2.imencode('.jpg', processed_img)
     encoded_img = base64.b64encode(buffer).decode('utf-8')
@@ -45,7 +51,8 @@ def upload():
     # Return the processed image and detected objects
     return jsonify({
         "image": encoded_img,
-        "objects": detected_objects
+        "objects": detected_objects,
+        "saved_path": filename  # Return the path where the image is saved
     })
 
 @app.route("/read-aloud", methods=["POST"])
